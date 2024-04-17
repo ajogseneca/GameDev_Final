@@ -20,7 +20,6 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 void init(void);
 void render();
-//void applyTexture(unsigned int& texture);
 
 void transformations(Shader& ourShader, unsigned int textureID);
 
