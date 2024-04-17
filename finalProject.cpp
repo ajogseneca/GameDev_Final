@@ -19,14 +19,15 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
 void processInput(GLFWwindow* window);
 void init(void);
+void initBall(void);
 void render();
-
+//void applyTexture(unsigned int& texture);
 
 void transformations(Shader& ourShader, unsigned int textureID);
 
 // variables
-const unsigned int screen_width = 1200;
-const unsigned int screen_height = 800;
+const unsigned int screen_width = 1024;
+const unsigned int screen_height = 768;
 const GLuint NumVertices = 36;
 unsigned int texture;
 GLuint VBO;
@@ -59,6 +60,12 @@ bool isSmiley = false;
 //texture
 void applyTexture(const char* texturePath, unsigned int& textureID);
 unsigned int textures[4];
+
+
+unsigned int ballTexture1, ballTexture2;
+void applyTexture1(unsigned int& ballTexture1);
+void applyTexture2(unsigned int& ballTexture2);
+
 
 int main()
 {
@@ -109,9 +116,16 @@ int main()
         Shader("shader.vs", "shader.fs")//texture shader
     };
 
+    Shader ballShader("shader_ball.vs", "shader_ball.fs");
+    Shader platformShader("platform.vs", "platform.fs");
+
     init();
 
-    //pplyTexture(texture);
+    //Applying double texture for our ball
+    applyTexture1(ballTexture1);
+    applyTexture2(ballTexture2);
+
+    
 
     //cube 
     const int numRows = 5;
@@ -129,16 +143,24 @@ int main()
         };
     };
 
+    //determining the position of the ball
+    float middleX = startX + ((numCols) / 2 * (rectWidth + padding));
+    float middleY = startY - (((numRows + 2)) * (rectHeight + padding));
+    float middleYPlatform = startY - (((numRows + 2.8)) * (rectHeight + padding));
+    float middleZ = -10.0f;
+
+    primPositions.push_back(glm::vec3(middleX, middleY, middleZ));
+    primPositions.push_back(glm::vec3(middleX, middleYPlatform, middleZ));
 
 
-    //code here
     // camera/view transformation
     glm::mat4 view = glm::mat4(1.0f); // view matrix initialization
     // setting the radius variable 
     float radius = 10.0f;
+    glm::mat4 projection = glm::perspective(glm::radians(fov), (float)screen_width / (float)screen_height, 0.1f, 100.0f);
+    
 
-
-    // render loop
+    
     // render loop
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = glfwGetTime();
@@ -147,18 +169,64 @@ int main()
 
         processInput(window);
         render();
-        glBindVertexArray(VAO);
+        glBindVertexArray(VAO);  
 
+        
+        glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 2.5f, 2.0f), glm::vec3(0.7f, 1.5f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+        glm::mat4 projection = glm::perspective(glm::radians(fov), (float)screen_width / (float)screen_height, 0.1f, 100.0f);
 
-        for (unsigned int i = 0; i < 45; i++) {
-            unsigned int textureIndex = i % 4; // Cycle through textures 0, 1, 2, 3
-            transformations(shaders[textureIndex], textures[textureIndex]);
-
+        for (unsigned int i = 0; i < (numCols * numRows) + 2; i++) {
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, primPositions[i]);
-            shaders[textureIndex].setMat4("model", model);
 
-            glDrawArrays(GL_TRIANGLES, 0, 36);
+            if (i == numCols * numRows) {
+                // Rendering the ball
+                ballShader.use();
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, ballTexture1);
+                ballShader.setInt("texture1", 0);
+
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, ballTexture2);
+                ballShader.setInt("texture2", 1);
+
+                model = glm::scale(model, glm::vec3(0.5f));  // Scale down the ball
+                ballShader.setMat4("model", model);
+                ballShader.setMat4("view", view);
+                ballShader.setMat4("projection", projection);
+
+                glDrawArrays(GL_TRIANGLES, 0, 36);  // Draw the ball
+            }
+            else if (i == (numCols * numRows) + 1) {
+                
+                model = glm::scale(model, glm::vec3(2.0f, 1.0f, 1.0f));
+                platformShader.use();
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, ballTexture1);
+                platformShader.setInt("texture1", 0);
+
+                glActiveTexture(GL_TEXTURE1);
+                glBindTexture(GL_TEXTURE_2D, ballTexture2);
+                platformShader.setInt("texture2", 1);
+
+                platformShader.setMat4("model", model);
+                platformShader.setMat4("view", view);
+                platformShader.setMat4("projection", projection);
+
+                glDrawArrays(GL_TRIANGLES, 0, 36);
+
+            }
+            else {
+                // Rendering other objects
+                unsigned int textureIndex = i % 4;
+                shaders[textureIndex].use();
+                transformations(shaders[textureIndex], textures[textureIndex]);
+                shaders[textureIndex].setMat4("model", model);
+                shaders[textureIndex].setMat4("view", view);
+                shaders[textureIndex].setMat4("projection", projection);
+
+                glDrawArrays(GL_TRIANGLES, 0, 36);  // Draw other objects
+            }
         }
 
         glfwSwapBuffers(window);
@@ -167,10 +235,11 @@ int main()
 
 
 
+
+
     glfwDestroyWindow(window);
     glDeleteVertexArrays(1, &VAO);
     glDeleteBuffers(1, &VBO);
-    //glDeleteProgram(shaderProgram);
     glfwTerminate();
     return 0;
 }
@@ -284,6 +353,7 @@ void init(void)
     glEnableVertexAttribArray(2);
 }
 
+
 // glfw: user input
 // glfw: user input
 void processInput(GLFWwindow* window)
@@ -387,6 +457,61 @@ void applyTexture(const char* texturePath, unsigned int& textureID) {
     }
     else {
         std::cout << "Failed to load texture: " << texturePath << std::endl;
+    }
+    stbi_image_free(data);
+}
+
+
+//This below 2 code snippet handles the application of 2 textures
+
+void applyTexture1(unsigned int& ballTexture)
+{
+    glGenTextures(1, &ballTexture);
+    glBindTexture(GL_TEXTURE_2D, ballTexture); // the texture object is applied with all the texture operations
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set GL_REPEAT as the wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+    int width, height, nrChannels;
+    unsigned char* data = stbi_load("assets/red.png", &width, &height, &nrChannels, 0);
+    // Generate mipmaps
+    if (data)
+    {
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
+    }
+    stbi_image_free(data);
+}
+
+void applyTexture2(unsigned int& ballTexture)
+{
+    glGenTextures(1, &ballTexture);
+    glBindTexture(GL_TEXTURE_2D, ballTexture); // the texture object is applied with all the texture operations
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set GL_REPEAT as the wrapping method)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // texture filtering parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // load image (mybox.png) and create the texture 
+    int width, height, nrChannels;
+    unsigned char* data = stbi_load("assets/yellow.png", &width, &height, &nrChannels, 0);
+    // Generate mipmaps
+    if (data)
+    {
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+    }
+    else
+    {
+        std::cout << "Failed to load texture" << std::endl;
     }
     stbi_image_free(data);
 }

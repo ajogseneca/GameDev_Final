@@ -44,5 +44,9 @@
     <None Include="shader_blue.fs" />
     <None Include="shader_red.fs" />
     <None Include="shader_yellow.fs" />
+    <None Include="shader_ball.fs" />
+    <None Include="shader_ball.vs" />
+    <None Include="platform.vs" />
+    <None Include="platform.fs" />
   </ItemGroup>
 </Project>
