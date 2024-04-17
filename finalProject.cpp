@@ -55,7 +55,7 @@ float deltaTime = 0.0f;	// time between current frame and last frame
 float lastFrame = 0.0f;
 
 //smiley texture flag
-bool isSmiley = false;
+bool launchBall = false;
 
 //texture
 void applyTexture(const char* texturePath, unsigned int& textureID);
@@ -125,7 +125,7 @@ int main()
     applyTexture1(ballTexture1);
     applyTexture2(ballTexture2);
 
-    
+
 
     //cube 
     const int numRows = 5;
@@ -158,9 +158,9 @@ int main()
     // setting the radius variable 
     float radius = 10.0f;
     glm::mat4 projection = glm::perspective(glm::radians(fov), (float)screen_width / (float)screen_height, 0.1f, 100.0f);
-    
 
-    
+
+
     // render loop
     while (!glfwWindowShouldClose(window)) {
         float currentFrame = glfwGetTime();
@@ -169,9 +169,9 @@ int main()
 
         processInput(window);
         render();
-        glBindVertexArray(VAO);  
+        glBindVertexArray(VAO);
 
-        
+
         glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 2.5f, 2.0f), glm::vec3(0.7f, 1.5f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
         glm::mat4 projection = glm::perspective(glm::radians(fov), (float)screen_width / (float)screen_height, 0.1f, 100.0f);
 
@@ -191,15 +191,20 @@ int main()
                 ballShader.setInt("texture2", 1);
 
                 model = glm::scale(model, glm::vec3(0.5f));  // Scale down the ball
+
+                if (launchBall) {
+                    primPositions[i].x += 0.001f;
+                    primPositions[i].y += 0.001f;
+                }
+
                 ballShader.setMat4("model", model);
                 ballShader.setMat4("view", view);
                 ballShader.setMat4("projection", projection);
 
                 glDrawArrays(GL_TRIANGLES, 0, 36);  // Draw the ball
             }
-            //Rendering the platform
             else if (i == (numCols * numRows) + 1) {
-                
+
                 model = glm::scale(model, glm::vec3(2.0f, 1.0f, 1.0f));
                 platformShader.use();
                 glActiveTexture(GL_TEXTURE0);
@@ -218,7 +223,7 @@ int main()
 
             }
             else {
-                // Rendering the cubes
+                // Rendering other objects
                 unsigned int textureIndex = i % 4;
                 shaders[textureIndex].use();
                 transformations(shaders[textureIndex], textures[textureIndex]);
@@ -374,12 +379,8 @@ void processInput(GLFWwindow* window)
     if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
         cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 
-    if (glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS) {
-        isSmiley = true;
-    }
-
-    if (glfwGetKey(window, GLFW_KEY_Y) == GLFW_PRESS) {
-        isSmiley = false;
+    if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+        launchBall = true;
     }
 }
 
