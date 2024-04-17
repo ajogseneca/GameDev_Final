@@ -197,6 +197,7 @@ int main()
 
                 glDrawArrays(GL_TRIANGLES, 0, 36);  // Draw the ball
             }
+            //Rendering the platform
             else if (i == (numCols * numRows) + 1) {
                 
                 model = glm::scale(model, glm::vec3(2.0f, 1.0f, 1.0f));
@@ -217,7 +218,7 @@ int main()
 
             }
             else {
-                // Rendering other objects
+                // Rendering the cubes
                 unsigned int textureIndex = i % 4;
                 shaders[textureIndex].use();
                 transformations(shaders[textureIndex], textures[textureIndex]);
