@@ -21,6 +21,7 @@ void processInput(GLFWwindow* window);
 void init(void);
 void render();
 
+
 void transformations(Shader& ourShader, unsigned int textureID);
 
 // variables
@@ -148,15 +149,14 @@ int main()
         render();
         glBindVertexArray(VAO);
 
-        glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
         for (unsigned int i = 0; i < 45; i++) {
             unsigned int textureIndex = i % 4; // Cycle through textures 0, 1, 2, 3
-            transformations(shaders[textureIndex], textures[textureIndex]); 
+            transformations(shaders[textureIndex], textures[textureIndex]);
 
             glm::mat4 model = glm::mat4(1.0f);
             model = glm::translate(model, primPositions[i]);
-            shaders[textureIndex].setMat4("model", model); 
+            shaders[textureIndex].setMat4("model", model);
 
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
@@ -179,14 +179,14 @@ void transformations(Shader& ourShader, unsigned int textureID)
 {
     ourShader.use();
 
-    glActiveTexture(GL_TEXTURE0); 
-    glBindTexture(GL_TEXTURE_2D, textureID); 
-    ourShader.setInt("texture1", 0); 
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    ourShader.setInt("texture1", 0);
 
     glm::mat4 projection = glm::perspective(glm::radians(fov), (float)screen_width / (float)screen_height, 0.1f, 100.0f);
     ourShader.setMat4("projection", projection);
 
-    glm::mat4 view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
+    glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 2.5f, 2.0f), glm::vec3(0.7f, 1.5f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
     ourShader.setMat4("view", view);
 }
 
@@ -390,4 +390,3 @@ void applyTexture(const char* texturePath, unsigned int& textureID) {
     }
     stbi_image_free(data);
 }
-
